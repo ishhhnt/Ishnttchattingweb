@@ -5,8 +5,12 @@
   <title>🔥 Global Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <style>
-    /* 👇 Same CSS (no changes) */
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
     body {
       min-height: 100vh;
       background: linear-gradient(135deg, #FDFCFB, #E2D1C3);
@@ -22,7 +26,6 @@
       background: rgba(255, 255, 255, 0.15);
       border-radius: 20px;
       backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
       border: 1px solid rgba(255, 255, 255, 0.3);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       display: flex;
@@ -51,6 +54,7 @@
       font-size: 0.95rem;
       word-wrap: break-word;
       display: inline-block;
+      position: relative;
     }
     .message.right {
       align-self: flex-end;
@@ -73,6 +77,16 @@
       opacity: 0.7;
       margin-bottom: 3px;
     }
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: red;
+      font-size: 1rem;
+      cursor: pointer;
+    }
     .chat-input {
       display: flex;
       flex-wrap: wrap;
@@ -87,8 +101,12 @@
       background: rgba(255, 255, 255, 0.7);
       font-size: 1rem;
     }
-    .chat-input input#username { flex: 1 1 40%; }
-    .chat-input input#messageInput { flex: 1 1 60%; }
+    .chat-input input#username {
+      flex: 1 1 40%;
+    }
+    .chat-input input#messageInput {
+      flex: 1 1 60%;
+    }
     .chat-input button {
       flex: 1 1 100%;
       padding: 10px;
@@ -101,11 +119,19 @@
       cursor: pointer;
       transition: 0.2s;
     }
-    .chat-input button:hover { background: #555; }
+    .chat-input button:hover {
+      background: #555;
+    }
     @media (min-width: 500px) {
-      .chat-input { flex-wrap: nowrap; }
-      .chat-input input { flex: 1; }
-      .chat-input button { flex: 0 0 auto; }
+      .chat-input {
+        flex-wrap: nowrap;
+      }
+      .chat-input input {
+        flex: 1;
+      }
+      .chat-input button {
+        flex: 0 0 auto;
+      }
     }
   </style>
 </head>
@@ -126,7 +152,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <script>
-    // ✅ Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCbLrTsR_-mgPpEVmEAM2a0xkiwLkZ7aWk",
       authDomain: "global-chat-3579c.firebaseapp.com",
@@ -151,12 +176,16 @@
       if (!name || !text) return;
 
       db.collection("messages").add({
-        name: name,
-        text: text,
+        name,
+        text,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
       messageInput.value = "";
+    }
+
+    function deleteMessage(id) {
+      db.collection("messages").doc(id).delete();
     }
 
     db.collection("messages")
@@ -169,7 +198,17 @@
           const msg = doc.data();
           const div = document.createElement("div");
           div.className = "message " + (msg.name.toLowerCase() === currentUser ? "right" : "left");
-          div.innerHTML = `<span>${msg.name}</span>${msg.text}`;
+          div.innerHTML = `<span>${msg.name}</span>${msg.text>}`;
+
+          // 🗑️ Add delete button if it's the user's own message
+          if (msg.name.toLowerCase() === currentUser) {
+            const delBtn = document.createElement("button");
+            delBtn.className = "delete-btn";
+            delBtn.innerText = "🗑️";
+            delBtn.onclick = () => deleteMessage(doc.id);
+            div.appendChild(delBtn);
+          }
+
           messagesBox.appendChild(div);
         });
 
