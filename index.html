@@ -1,158 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>🌐 Global Chat</title>
+  <title>🌐 Simple Global Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-    }
     body {
-      background: linear-gradient(135deg, #1f1c2c, #928dab);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      margin: 0;
       padding: 20px;
     }
-    .chat-container {
-      width: 100%;
-      max-width: 480px;
-      height: 95vh;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      backdrop-filter: blur(18px);
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    .chat-box {
+      max-width: 500px;
+      margin: auto;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
     }
-    .chat-header {
-      font-size: 1.6rem;
-      font-weight: bold;
-      color: #fff;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .pfp-select {
-      display: flex;
-      overflow-x: auto;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .pfp-select img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .pfp-select img.selected {
-      border-color: #fff;
-    }
-    .messages {
-      flex: 1;
+    #messages {
+      height: 300px;
       overflow-y: auto;
+      margin-bottom: 10px;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      padding-right: 5px;
     }
     .message {
-      position: relative;
-      padding: 10px 15px;
-      border-radius: 12px;
-      max-width: 75%;
-      word-wrap: break-word;
-      font-size: 0.95rem;
-      background: rgba(255,255,255,0.2);
-      color: white;
-    }
-    .message.right {
-      align-self: flex-end;
-      background: rgba(0, 0, 0, 0.6);
-    }
-    .message.left {
-      align-self: flex-start;
-    }
-    .message span.name {
-      font-size: 0.75rem;
-      font-weight: bold;
-      opacity: 0.8;
-      display: block;
-      margin-bottom: 3px;
-    }
-    .message img.pfp {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      position: absolute;
-      bottom: -15px;
-      right: -15px;
-    }
-    .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 8px;
-      background: rgba(255, 0, 0, 0.7);
-      border: none;
-      color: white;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      padding: 2px 5px;
-      cursor: pointer;
-    }
-    .seen {
-      font-size: 0.7rem;
-      color: lightgreen;
-      margin-top: 3px;
-    }
-    .chat-input {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .chat-input input, .chat-input button {
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      font-size: 1rem;
-    }
-    .chat-input input {
-      flex: 1;
-      background: rgba(255,255,255,0.8);
-    }
-    .chat-input button {
       background: #333;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+    }
+    button {
+      background: #00b894;
       color: white;
       cursor: pointer;
-    }
-    @media (max-width: 500px) {
-      .chat-input {
-        flex-direction: column;
-      }
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">💬 Global Chat</div>
-
-    <div class="pfp-select" id="pfpGallery"></div>
-
-    <div class="messages" id="messages"></div>
-
-    <div class="chat-input">
-      <input type="text" id="username" placeholder="Your name">
-      <input type="text" id="messageInput" placeholder="Type a message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+  <div class="chat-box">
+    <h2>🌐 Global Chat</h2>
+    <input id="name" placeholder="Your name">
+    <input id="message" placeholder="Type a message">
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
   </div>
 
   <!-- Firebase SDK -->
@@ -160,6 +60,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <script>
+    // ✅ Replace with your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCbLrTsR_-mgPpEVmEAM2a0xkiwLkZ7aWk",
       authDomain: "global-chat-3579c.firebaseapp.com",
@@ -168,103 +69,47 @@
       messagingSenderId: "710320958581",
       appId: "1:710320958581:web:9736b41f4e4af510c0dc3c"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const pfpGallery = document.getElementById("pfpGallery");
-    const messageBox = document.getElementById("messages");
-    const username = document.getElementById("username");
-    const messageInput = document.getElementById("messageInput");
-
-    // ✅ Set default PFP
-    let selectedPfp = "https://i.ibb.co/BK3NSDVf/gojo-satoru.gif";
-
-    const pfps = [
-      "https://i.ibb.co/3m0CrwSG/53515debf7d21e339600f4bed4213512.jpg",
-      "https://i.ibb.co/MyJ8z2gW/be7067394800431bc6e56dbeca6b7934.jpg",
-      "https://i.ibb.co/6cyMBMYn/2d6e0349c903054cd46df638a172d4b8.jpg",
-      "https://i.ibb.co/KYvgbnm/a1b6382df31b01e04742d8a48183afba.jpg",
-      "https://i.ibb.co/BK3NSDVf/gojo-satoru.gif"
-    ];
-
-    // Show pfps and default selected
-    pfps.forEach((url, index) => {
-      const img = document.createElement("img");
-      img.src = url;
-      img.onclick = () => {
-        document.querySelectorAll('.pfp-select img').forEach(i => i.classList.remove("selected"));
-        img.classList.add("selected");
-        selectedPfp = url;
-      };
-      if (url === selectedPfp) img.classList.add("selected");
-      pfpGallery.appendChild(img);
-    });
+    const nameInput = document.getElementById("name");
+    const msgInput = document.getElementById("message");
+    const messagesDiv = document.getElementById("messages");
 
     function sendMessage() {
-      const name = username.value.trim();
-      const text = messageInput.value.trim();
+      const name = nameInput.value.trim();
+      const text = msgInput.value.trim();
+
       if (!name || !text) return;
+
+      console.log("Send button clicked ✅"); // Debug check
 
       db.collection("messages").add({
         name,
         text,
-        seenBy: [],
-        pfp: selectedPfp,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        console.log("Message sent to Firestore ✅");
+        msgInput.value = "";
+      }).catch(err => {
+        console.error("Error sending message:", err);
       });
-
-      messageInput.value = "";
-    }
-
-    function deleteMessage(id) {
-      db.collection("messages").doc(id).delete();
     }
 
     db.collection("messages").orderBy("timestamp").onSnapshot(snapshot => {
-      messageBox.innerHTML = "";
-      const currentUser = username.value.trim().toLowerCase();
-
+      messagesDiv.innerHTML = "";
       snapshot.forEach(doc => {
-        const msg = doc.data();
+        const data = doc.data();
         const div = document.createElement("div");
-        const isMe = msg.name.toLowerCase() === currentUser;
-
-        div.className = "message " + (isMe ? "right" : "left");
-        div.innerHTML = `<span class="name">${msg.name}</span>${msg.text}`;
-
-        const img = document.createElement("img");
-        img.className = "pfp";
-        img.src = msg.pfp;
-        div.appendChild(img);
-
-        if (isMe) {
-          const del = document.createElement("button");
-          del.className = "delete-btn";
-          del.textContent = "Delete";
-          del.onclick = () => deleteMessage(doc.id);
-          div.appendChild(del);
-        }
-
-        if (!msg.seenBy.includes(currentUser) && currentUser) {
-          db.collection("messages").doc(doc.id).update({
-            seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser)
-          });
-        }
-
-        if (msg.seenBy && msg.seenBy.length > 0 && isMe) {
-          const seen = document.createElement("div");
-          seen.className = "seen";
-          seen.textContent = "Seen by: " + msg.seenBy.join(", ");
-          div.appendChild(seen);
-        }
-
-        messageBox.appendChild(div);
+        div.className = "message";
+        div.innerText = `${data.name}: ${data.text}`;
+        messagesDiv.appendChild(div);
       });
-
-      messageBox.scrollTop = messageBox.scrollHeight;
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    messageInput.addEventListener("keypress", e => {
+    msgInput.addEventListener("keypress", e => {
       if (e.key === "Enter") sendMessage();
     });
   </script>
