@@ -1,66 +1,182 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>🌐 Simple Global Chat</title>
+  <title>🌐 Global Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --bg-light: linear-gradient(to right, #e0eafc, #cfdef3);
+      --bg-dark: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      --glass-bg-light: rgba(255, 255, 255, 0.3);
+      --glass-bg-dark: rgba(18, 18, 18, 0.3);
+      --text-dark: #111;
+      --text-light: #fff;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-light);
+      transition: 0.5s ease all;
     }
+
     .chat-box {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 10px;
+      margin-top: 60px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 80px);
+      backdrop-filter: blur(15px);
+      background: var(--glass-bg-dark);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+      overflow: hidden;
     }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: transparent;
+    }
+
+    .menu {
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 20px;
+      margin-right: 10px;
+    }
+
     #messages {
-      height: 300px;
+      flex: 1;
       overflow-y: auto;
-      margin-bottom: 10px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+
     .message {
-      background: #333;
       padding: 10px;
-      border-radius: 8px;
+      border-radius: 10px;
+      max-width: 75%;
+      position: relative;
+      word-wrap: break-word;
     }
+
+    .own {
+      background: #00b894;
+      align-self: flex-end;
+      color: white;
+    }
+
+    .other {
+      background: #2f2f2f;
+      align-self: flex-start;
+      color: #fff;
+    }
+
+    .actions {
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      font-size: 12px;
+    }
+
+    .actions button {
+      background: transparent;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    .bottom-controls {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     input, button {
       padding: 10px;
-      margin: 5px 0;
-      width: 100%;
       font-size: 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
+      outline: none;
     }
+
+    input {
+      background: rgba(255, 255, 255, 0.1);
+      color: inherit;
+    }
+
     button {
       background: #00b894;
       color: white;
       cursor: pointer;
     }
+
+    /* Light mode override */
+    body.light-mode {
+      background: var(--bg-light);
+      color: var(--text-dark);
+    }
+
+    body.light-mode .chat-box {
+      background: var(--glass-bg-light);
+      color: var(--text-dark);
+    }
+
+    body.light-mode .own {
+      background: #00796b;
+    }
+
+    body.light-mode .other {
+      background: #ffffffa8;
+      color: #000;
+    }
+
+    body.light-mode input {
+      background: rgba(0, 0, 0, 0.05);
+      color: #000;
+    }
+
+    body.light-mode .actions button {
+      color: #000;
+    }
   </style>
 </head>
 <body>
   <div class="chat-box">
-    <h2>🌐 Global Chat</h2>
-    <input id="name" placeholder="Your name">
-    <input id="message" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
+    <div class="chat-header">
+      <h2>🌐 Global Chat</h2>
+      <div>
+        <span class="theme-toggle" onclick="toggleTheme()">🌗</span>
+        <span class="menu">⋮</span>
+      </div>
+    </div>
     <div id="messages"></div>
+    <div class="bottom-controls">
+      <input id="name" placeholder="Your name">
+      <input id="message" placeholder="Type a message">
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <script>
-    // ✅ Replace with your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCbLrTsR_-mgPpEVmEAM2a0xkiwLkZ7aWk",
       authDomain: "global-chat-3579c.firebaseapp.com",
@@ -69,7 +185,6 @@
       messagingSenderId: "710320958581",
       appId: "1:710320958581:web:9736b41f4e4af510c0dc3c"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -80,21 +195,25 @@
     function sendMessage() {
       const name = nameInput.value.trim();
       const text = msgInput.value.trim();
-
       if (!name || !text) return;
-
-      console.log("Send button clicked ✅"); // Debug check
-
       db.collection("messages").add({
         name,
         text,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        console.log("Message sent to Firestore ✅");
         msgInput.value = "";
-      }).catch(err => {
-        console.error("Error sending message:", err);
       });
+    }
+
+    function deleteMessage(id) {
+      db.collection("messages").doc(id).delete();
+    }
+
+    function editMessage(id, oldText) {
+      const newText = prompt("Edit your message:", oldText);
+      if (newText && newText.trim() !== "") {
+        db.collection("messages").doc(id).update({ text: newText });
+      }
     }
 
     db.collection("messages").orderBy("timestamp").onSnapshot(snapshot => {
@@ -102,8 +221,20 @@
       snapshot.forEach(doc => {
         const data = doc.data();
         const div = document.createElement("div");
-        div.className = "message";
+        const isOwn = data.name === nameInput.value.trim();
+        div.className = "message " + (isOwn ? "own" : "other");
         div.innerText = `${data.name}: ${data.text}`;
+
+        if (isOwn) {
+          const actions = document.createElement("div");
+          actions.className = "actions";
+          actions.innerHTML = `
+            <button onclick="editMessage('${doc.id}', \`${data.text}\`)">✏️</button>
+            <button onclick="deleteMessage('${doc.id}')">🗑️</button>
+          `;
+          div.appendChild(actions);
+        }
+
         messagesDiv.appendChild(div);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -112,6 +243,11 @@
     msgInput.addEventListener("keypress", e => {
       if (e.key === "Enter") sendMessage();
     });
+
+    // Theme toggle 🌗
+    function toggleTheme() {
+      document.body.classList.toggle("light-mode");
+    }
   </script>
 </body>
 </html>
