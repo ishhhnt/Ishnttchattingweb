@@ -84,19 +84,72 @@
       color: #fff;
     }
 
-    .actions {
-      position: absolute;
-      bottom: 5px;
-      right: 10px;
-      font-size: 12px;
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
 
-    .actions button {
+    .message-time {
+      font-size: 0.7em;
+      opacity: 0.7;
+      margin-left: 10px;
+      font-weight: normal;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+
+    .message-actions button {
       background: transparent;
-      color: white;
+      color: inherit;
       border: none;
       cursor: pointer;
-      margin-left: 5px;
+      font-size: 14px;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    .reactions {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+      flex-wrap: wrap;
+    }
+
+    .reaction {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .reaction:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .reaction.active {
+      background: rgba(0, 184, 148, 0.5);
+    }
+
+    .add-reaction {
+      font-size: 12px;
+      opacity: 0.7;
+      cursor: pointer;
+    }
+
+    .add-reaction:hover {
+      opacity: 1;
     }
 
     .bottom-controls {
@@ -125,6 +178,28 @@
       cursor: pointer;
     }
 
+    .status-bar {
+      padding: 8px 15px;
+      font-size: 12px;
+      opacity: 0.7;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .active-users {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .active-user {
+      width: 8px;
+      height: 8px;
+      background: #00b894;
+      border-radius: 50%;
+    }
+
     /* Light mode override */
     body.light-mode {
       background: var(--bg-light);
@@ -150,8 +225,16 @@
       color: #000;
     }
 
-    body.light-mode .actions button {
+    body.light-mode .message-actions button {
       color: #000;
+    }
+
+    body.light-mode .reaction {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    body.light-mode .status-bar {
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
@@ -165,6 +248,13 @@
       </div>
     </div>
     <div id="messages"></div>
+    <div class="status-bar">
+      <div class="active-users">
+        <span class="active-user"></span>
+        <span id="active-count">0 active</span>
+      </div>
+      <div id="last-seen"></div>
+    </div>
     <div class="bottom-controls">
       <input id="name" placeholder="Your name">
       <input id="message" placeholder="Type a message">
@@ -191,15 +281,74 @@
     const nameInput = document.getElementById("name");
     const msgInput = document.getElementById("message");
     const messagesDiv = document.getElementById("messages");
+    const activeCount = document.getElementById("active-count");
+    const lastSeen = document.getElementById("last-seen");
+
+    // Track active users
+    let activeUsers = {};
+    const currentUser = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
+    // Presence system
+    const presenceRef = db.collection("presence").doc(currentUser);
+    
+    // Set user as active
+    presenceRef.set({
+      lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'online'
+    });
+    
+    // Update last active every 10 seconds
+    setInterval(() => {
+      presenceRef.update({
+        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }, 10000);
+    
+    // Update active users count
+    db.collection("presence").where("lastActive", ">", new Date(Date.now() - 30000))
+      .onSnapshot(snapshot => {
+        activeUsers = {};
+        snapshot.forEach(doc => {
+          activeUsers[doc.id] = doc.data();
+        });
+        activeCount.textContent = `${Object.keys(activeUsers).length} active`;
+      });
+    
+    // Format time
+    function formatTime(timestamp) {
+      if (!timestamp) return '';
+      const date = timestamp.toDate();
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Format last seen
+    function formatLastSeen(timestamp) {
+      if (!timestamp) return 'Never';
+      const now = new Date();
+      const date = timestamp.toDate();
+      const diff = (now - date) / 1000; // in seconds
+      
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} hour${Math.floor(diff / 3600) > 1 ? 's' : ''} ago`;
+      return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? 's' : ''} ago`;
+    }
 
     function sendMessage() {
       const name = nameInput.value.trim();
       const text = msgInput.value.trim();
       if (!name || !text) return;
+      
+      // Update presence with name
+      presenceRef.update({
+        name: name
+      });
+      
       db.collection("messages").add({
         name,
         text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        reactions: {}
       }).then(() => {
         msgInput.value = "";
       });
@@ -215,6 +364,48 @@
         db.collection("messages").doc(id).update({ text: newText });
       }
     }
+    
+    function addReaction(messageId, currentReactions) {
+      const reaction = prompt("Enter an emoji reaction:");
+      if (reaction && reaction.trim() !== "") {
+        const newReactions = {...currentReactions};
+        const name = nameInput.value.trim();
+        
+        // Remove previous reaction from this user if exists
+        for (const r in newReactions) {
+          if (newReactions[r].includes(name)) {
+            newReactions[r] = newReactions[r].filter(u => u !== name);
+            if (newReactions[r].length === 0) {
+              delete newReactions[r];
+            }
+          }
+        }
+        
+        // Add new reaction
+        if (!newReactions[reaction]) {
+          newReactions[reaction] = [name];
+        } else if (!newReactions[reaction].includes(name)) {
+          newReactions[reaction].push(name);
+        }
+        
+        db.collection("messages").doc(messageId).update({ reactions: newReactions });
+      }
+    }
+    
+    function toggleReaction(messageId, reaction, users, currentUser) {
+      const newUsers = [...users];
+      const userIndex = newUsers.indexOf(currentUser);
+      
+      if (userIndex > -1) {
+        newUsers.splice(userIndex, 1);
+      } else {
+        newUsers.push(currentUser);
+      }
+      
+      db.collection("messages").doc(messageId).update({
+        [`reactions.${reaction}`]: newUsers
+      });
+    }
 
     db.collection("messages").orderBy("timestamp").onSnapshot(snapshot => {
       messagesDiv.innerHTML = "";
@@ -223,14 +414,53 @@
         const div = document.createElement("div");
         const isOwn = data.name === nameInput.value.trim();
         div.className = "message " + (isOwn ? "own" : "other");
-        div.innerText = `${data.name}: ${data.text}`;
-
+        
+        // Message header with name and time
+        const header = document.createElement("div");
+        header.className = "message-header";
+        header.innerHTML = `
+          <span>${data.name}</span>
+          <span class="message-time">${formatTime(data.timestamp)}</span>
+        `;
+        div.appendChild(header);
+        
+        // Message text
+        const text = document.createElement("div");
+        text.textContent = data.text;
+        div.appendChild(text);
+        
+        // Reactions
+        if (data.reactions && Object.keys(data.reactions).length > 0) {
+          const reactionsDiv = document.createElement("div");
+          reactionsDiv.className = "reactions";
+          
+          for (const [emoji, users] of Object.entries(data.reactions)) {
+            if (users.length > 0) {
+              const reaction = document.createElement("span");
+              reaction.className = `reaction ${users.includes(nameInput.value.trim()) ? 'active' : ''}`;
+              reaction.innerHTML = `${emoji} ${users.length}`;
+              reaction.onclick = () => toggleReaction(doc.id, emoji, users, nameInput.value.trim());
+              reactionsDiv.appendChild(reaction);
+            }
+          }
+          
+          div.appendChild(reactionsDiv);
+        }
+        
+        // Add reaction button
+        const addReactionBtn = document.createElement("div");
+        addReactionBtn.className = "add-reaction";
+        addReactionBtn.textContent = "Add reaction";
+        addReactionBtn.onclick = () => addReaction(doc.id, data.reactions || {});
+        div.appendChild(addReactionBtn);
+        
+        // Actions (edit/delete for own messages)
         if (isOwn) {
           const actions = document.createElement("div");
-          actions.className = "actions";
+          actions.className = "message-actions";
           actions.innerHTML = `
-            <button onclick="editMessage('${doc.id}', \`${data.text}\`)">✏️</button>
-            <button onclick="deleteMessage('${doc.id}')">🗑️</button>
+            <button onclick="editMessage('${doc.id}', \`${data.text}\`)">✏️ Edit</button>
+            <button onclick="deleteMessage('${doc.id}')">🗑️ Delete</button>
           `;
           div.appendChild(actions);
         }
@@ -239,6 +469,17 @@
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
+    
+    // Update last seen time periodically
+    setInterval(() => {
+      if (Object.keys(activeUsers).length > 0) {
+        const latestActive = Math.max(...Object.values(activeUsers).map(u => 
+          u.lastActive ? u.lastActive.toMillis() : 0
+        ));
+        const latestActiveDate = new Date(latestActive);
+        lastSeen.textContent = `Last active: ${formatLastSeen(firebase.firestore.Timestamp.fromDate(latestActiveDate))}`;
+      }
+    }, 5000);
 
     msgInput.addEventListener("keypress", e => {
       if (e.key === "Enter") sendMessage();
@@ -248,6 +489,11 @@
     function toggleTheme() {
       document.body.classList.toggle("light-mode");
     }
+    
+    // Clean up presence when user leaves
+    window.addEventListener('beforeunload', () => {
+      presenceRef.delete();
+    });
   </script>
 </body>
 </html>
