@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(-45deg, #2F00ED, #D2FFDA, #F40076, #DF90FA, #402662, #3900A6);
+      background-size: 400% 400%;
+      animation: gradient 6s ease infinite;
+      opacity: 0;
+      z-index: -2;
+      transition: opacity 0.5s ease;
+    }
+
+    body.theme-active::before {
+      opacity: 1;
+    }
+
+    #bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+    }
+
+    #bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+    }
+
+    #bg img.active {
+      opacity: 1;
+    }
+
+    .login-box {
+      width: 90%;
+      max-width: 360px;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      color: #fff;
+      animation: fadeZoom 0.8s ease forwards;
+    }
+
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      background: #00c6ff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .login-box button:hover {
+      background: #0072ff;
+    }
+
+    .skip {
+      text-align: center;
+      margin-top: 15px;
+      text-decoration: underline;
+      color: white;
+      cursor: pointer;
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      z-index: 10;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      backdrop-filter: blur(5px);
+    }
+
+    .theme-buttons {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .theme-buttons button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 15px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      backdrop-filter: blur(4px);
+    }
+
+    .theme-pink { background: #F40076; }
+    .theme-purple { background: #402662; }
+    .theme-blue { background: #2F00ED; }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes fadeZoom {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .login-box {
+        padding: 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .toggle-btn {
+        font-size: 12px;
+        padding: 8px 14px;
+      }
+
+      .theme-buttons {
+        top: 50px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="toggle-btn" onclick="toggleBackground()">Stop Background</button>
+
+  <div class="theme-buttons" id="themeButtons">
+    <button class="theme-pink" onclick="setGradient('F40076', 'DF90FA')">Pink</button>
+    <button class="theme-purple" onclick="setGradient('402662', '3900A6')">Purple</button>
+    <button class="theme-blue" onclick="setGradient('2F00ED', 'D2FFDA')">Default</button>
+  </div>
+
+  <div id="bg">
+    <img src="img/1.jpg" class="active">
+    <img src="img/2.jpg">
+    <img src="img/3.jpg">
+    <img src="img/4.jpg">
+    <img src="img/5.jpg">
+    <img src="img/6.jpg">
+    <img src="img/7.jpg">
+    <img src="img/8.jpg">
+    <img src="img/9.jpg">
+    <img src="img/10.jpg">
+  </div>
+
+  <div class="login-box">
+    <h2>Welcome</h2>
+    <input type="text" placeholder="Email or Username" />
+    <input type="password" placeholder="Password" />
+    <button>Login</button>
+    <div class="skip" onclick="location.href='index.html'">Skip</div>
+  </div>
+
+  <script>
+    const images = document.querySelectorAll('#bg img');
+    const themeButtons = document.getElementById('themeButtons');
+    let index = 0;
+    let interval = setInterval(changeImage, 1000);
+    let stopped = false;
+
+    function changeImage() {
+      images[index].classList.remove('active');
+      index = (index + 1) % images.length;
+      images[index].classList.add('active');
+    }
+
+    function toggleBackground() {
+      stopped = !stopped;
+      if (stopped) {
+        clearInterval(interval);
+        document.body.classList.add('theme-active');
+        document.getElementById('bg').style.display = 'none';
+        document.querySelector('.toggle-btn').innerText = "Start Background";
+        themeButtons.style.display = "flex";
+      } else {
+        interval = setInterval(changeImage, 1000);
+        document.body.classList.remove('theme-active');
+        document.getElementById('bg').style.display = 'block';
+        document.querySelector('.toggle-btn').innerText = "Stop Background";
+        themeButtons.style.display = "none";
+      }
+    }
+
+    function setGradient(color1, color2) {
+      document.body.style.setProperty('--color1', `#${color1}`);
+      document.body.style.setProperty('--color2', `#${color2}`);
+      document.body.style.setProperty('background', `linear-gradient(-45deg, #${color1}, #${color2})`);
+    }
+  </script>
+
+</body>
+</html>
